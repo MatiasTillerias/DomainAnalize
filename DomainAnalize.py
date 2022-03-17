@@ -1,9 +1,13 @@
+import requests
 import socket
 from rich.console import Console
 from rich.progress import track
+from rich import print
+from rich.layout import Layout
 import argparse
 import sqlite3
 from sqlite3 import Error
+
 
 console = Console()
 parser = argparse.ArgumentParser(description="Intelligence gathering based on a list of subdomains")
@@ -24,6 +28,11 @@ def database():
             ip,
             ptrRecord
     )''')
+    db.execute('''CREATE TABLE IF NOT EXISTS webStatusCode(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            domain,
+            status_code
+            )''')
     return con
 
 def CheckIfExist(itemIdentificador,tabla,column,value):
@@ -66,10 +75,34 @@ def getPTR(db,con):
                 db.execute("INSERT INTO ptrRecord (ip,ptrRecord) VALUES (?,?)", ptrTupla)
                 con.commit()
         except:
-            console.log("\n[red bold] no ptr Record found for [/red bold][yellow bold]" + i[0] )
+            pass
+def isUp(con,db):
+    db.execute('''
+            SELECT domain
+            FROM domain
+    ''')
+    for i in track(db.fetchall(), description="Checking if the web is UP"):
+        domain = i[0]
+        try:
+            if CheckIfExist("domain","webStatusCode","domain",domain):
+                r = requests.get("http://" + domain, timeout=1)
+                statusTuple = (domain,str(r.status_code))
+                db.execute("INSERT INTO webStatusCode (domain,status_code) VALUES (?,?)",statusTuple)
+                con.commit()
+        except:
+            pass
+
+def dashboard():
+    layout = Layout()
+    print(layout)
+
 def main():
     con = database()
     db = con.cursor()
     getIp(db,con)
     getPTR(db,con)
-main()
+    isUp(con,db)
+    dashboard()
+
+if __name__ == "__main__":
+    main()
