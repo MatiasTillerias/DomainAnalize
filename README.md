@@ -36,6 +36,10 @@ pip3 install -r requirements.txt
 | `-l`            | `--list`           | **Required**. File with list of Domains or sub-Domain |
 | `-n`            | `--name`           | **Required**. Project Name |
 
+
+![demo](https://user-images.githubusercontent.com/26033180/159063857-fdf65dfa-6a59-4157-9cd3-0e5c4723001f.gif)
+
+
 #### File format
 
 The file with the sub/domains must to be with with out blank spaces or other elements like comas or dots
