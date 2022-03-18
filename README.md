@@ -11,7 +11,13 @@ A simple (or useless) python script used to analize a bunch of domains or subdom
 
 ## Installation
 
-Install my-project with pip
+To install first is required download the software using the `git clon` command
+
+```bash
+git clone git@github.com:MatiasTillerias/DomainAnalize.git
+```
+
+Once the repository is cloned into your device you have to install the requirements using pip3
 
 ```bash
 pip3 install -r requirements.txt
