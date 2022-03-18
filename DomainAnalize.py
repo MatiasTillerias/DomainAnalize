@@ -37,7 +37,15 @@ def database():
             ip,
             domainArray
             )''')
+    db.execute('''CREATE TABLE IF NOT EXISTS wordpressDomain(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            domain,
+            isWordpress
+            )''')
     return con
+
+def isWordpress():
+    pass
 
 def generalSelect(db, col,table):
     db.execute("SELECT "+col+" FROM "+ table)
@@ -89,6 +97,11 @@ def isUp(con,db):
                 statusTuple = (domain,str(r.status_code))
                 db.execute("INSERT INTO webStatusCode (domain,status_code) VALUES (?,?)",statusTuple)
                 con.commit()
+                if str(r.status_code) == "200" and bool(re.search("wp-",r.text)):
+                    isWordpressTupla = (i[0],"Es Wordpress")
+                    db.execute("INSERT INTO wordpressDomain (domain, isWordpress) VALUES (?,?)",isWordpressTupla)
+                    con.commit()
+
         except:
             pass
 
@@ -119,12 +132,24 @@ def result(db):
    table2 = Table(show_header=True, header_style="bold magenta", show_lines=True)
    table2.add_column("Status Code")
    table2.add_column("Domains")
+   table2.add_column("CMS")
    for i in status_code_resp:
        db.execute("SELECT domain FROM webStatusCode WHERE status_code = '"+str(i[0])+"'")
        domainsList = db.fetchall()
        for k in domainsList:
-           table2.add_row(i[0],k[0])
+           db.execute("SELECT COUNT(domain) FROM wordpressDomain WHERE domain = '"+k[0]+"'")
+           isWordpressAns = db.fetchall()
+           if isWordpressAns[0][0]:
+               isWordpressTable = "Wordpress"
+           else:
+                isWordpressTable = "No CMS Found"
+           table2.add_row(
+                   i[0],
+                   k[0],
+                   isWordpressTable
+                   )
    console.print(table2)
+
 def sameIP(con,db):
     for i in generalSelect(db,"ip","ptrRecord"):
         if CheckIfExist("ip","sameIP","ip",i[0]):
