@@ -1,4 +1,5 @@
 # Byte-compiled / optimized / DLL files
+
 __pycache__/
 *.py[cod]
 *$py.class
@@ -7,7 +8,8 @@ lib64
 # C extensions
 *.so
 bin
-
+google.cl
+googleProject
 # Distribution / packaging
 .Python
 build/

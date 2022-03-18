@@ -6,7 +6,7 @@ from rich.table import Table
 import argparse
 import sqlite3
 from sqlite3 import Error
-
+import re
 
 console = Console()
 parser = argparse.ArgumentParser(description="Intelligence gathering based on a list of subdomains")
@@ -39,6 +39,9 @@ def database():
             )''')
     return con
 
+def generalSelect(db, col,table):
+    db.execute("SELECT "+col+" FROM "+ table)
+    return db.fetchall()
 def CheckIfExist(itemIdentificador,tabla,column,value):
     con = database()
     db = con.cursor()
@@ -67,11 +70,7 @@ def getIp(db,con):
             pass
 
 def getPTR(db,con):
-    db.execute('''
-                SELECT ip 
-                FROM domain
-            ''')
-    for i in track(db.fetchall(), description="Getting the PTR record from the ip's"):
+    for i in track(generalSelect(db,"ip","domain"), description="Getting the PTR record from the ip's"):
         try:    
             ptr = socket.gethostbyaddr(i[0])
             if CheckIfExist("ip","ptrRecord","ip",i[0]):
@@ -82,11 +81,7 @@ def getPTR(db,con):
         except:
             pass
 def isUp(con,db):
-    db.execute('''
-            SELECT domain
-            FROM domain
-    ''')
-    for i in track(db.fetchall(), description="Checking if the web is UP"):
+    for i in track(generalSelect(db,"domain","domain"), description="Checking if the web is UP"):
         domain = i[0]
         try:
             if CheckIfExist("domain","webStatusCode","domain",domain):
@@ -98,29 +93,40 @@ def isUp(con,db):
             pass
 
 
-def result(db,con):
-   db.execute('''
-            SELECT *
-            FROM ptrRecord
-           ''') 
-   ip = db.fetchall()
+def result(db):
+   ip = generalSelect(db,"*","ptrRecord")
    console.log("[bold red]Total IP's Found[/bold red][yellow] "+str(len(ip)))
-   table = Table(show_header=True, header_style="bold magenta")
+   table = Table(show_header=True, header_style="bold magenta", show_lines=True)
    table.add_column("IP", style="dim", width=20)
-   table.add_column("Domain")
+   table.add_column("Record PTR")
+   table.add_column("Domains List")
+   
    for i in ip:
+    db.execute("SELECT (domainArray) FROM sameIP WHERE ip = '"+i[1]+"'")
+    domainArray = db.fetchall()
+    regex = "[a-zA-Z0-9\.-]"
+    domainRe = re.findall(regex, domainArray[0][0].replace("'","Hello"))
+    regex_result = "".join(domainRe).replace("Hello"," ")
     table.add_row(
         i[1],
         i[2],
+        regex_result
     )
    console.print(table)
-
+   db.execute("select status_code, count(*) c from webStatusCode group by status_code having c >= 1;")
+   console.log("[bold red]We recived the following status codes responses[/bold red]")
+   status_code_resp = db.fetchall()
+   table2 = Table(show_header=True, header_style="bold magenta", show_lines=True)
+   table2.add_column("Status Code")
+   table2.add_column("Domains")
+   for i in status_code_resp:
+       db.execute("SELECT domain FROM webStatusCode WHERE status_code = '"+str(i[0])+"'")
+       domainsList = db.fetchall()
+       for k in domainsList:
+           table2.add_row(i[0],k[0])
+   console.print(table2)
 def sameIP(con,db):
-    db.execute('''
-                SELECT ip
-                FROM ptrRecord
-            ''')
-    for i in db.fetchall():
+    for i in generalSelect(db,"ip","ptrRecord"):
         if CheckIfExist("ip","sameIP","ip",i[0]):
             db.execute("SELECT domain FROM domain WHERE ip = '"+i[0]+"'")
             domains = str(db.fetchall())
@@ -134,7 +140,7 @@ def main():
     getPTR(db,con)
     isUp(con,db)
     sameIP(con,db)
-    result(db,con)
+    result(db)
 
 if __name__ == "__main__":
     main()
