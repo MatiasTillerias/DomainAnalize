@@ -2,8 +2,7 @@ import requests
 import socket
 from rich.console import Console
 from rich.progress import track
-from rich import print
-from rich.layout import Layout
+from rich.table import Table
 import argparse
 import sqlite3
 from sqlite3 import Error
@@ -32,6 +31,11 @@ def database():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             domain,
             status_code
+            )''')
+    db.execute('''CREATE TABLE IF NOT EXISTS sameIP(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ip,
+            domainArray
             )''')
     return con
 
@@ -71,6 +75,7 @@ def getPTR(db,con):
         try:    
             ptr = socket.gethostbyaddr(i[0])
             if CheckIfExist("ip","ptrRecord","ip",i[0]):
+                
                 ptrTupla = (i[0],ptr[0])
                 db.execute("INSERT INTO ptrRecord (ip,ptrRecord) VALUES (?,?)", ptrTupla)
                 con.commit()
@@ -92,17 +97,44 @@ def isUp(con,db):
         except:
             pass
 
-def dashboard():
-    layout = Layout()
-    print(layout)
 
+def result(db,con):
+   db.execute('''
+            SELECT *
+            FROM ptrRecord
+           ''') 
+   ip = db.fetchall()
+   console.log("[bold red]Total IP's Found[/bold red][yellow] "+str(len(ip)))
+   table = Table(show_header=True, header_style="bold magenta")
+   table.add_column("IP", style="dim", width=20)
+   table.add_column("Domain")
+   for i in ip:
+    table.add_row(
+        i[1],
+        i[2],
+    )
+   console.print(table)
+
+def sameIP(con,db):
+    db.execute('''
+                SELECT ip
+                FROM ptrRecord
+            ''')
+    for i in db.fetchall():
+        if CheckIfExist("ip","sameIP","ip",i[0]):
+            db.execute("SELECT domain FROM domain WHERE ip = '"+i[0]+"'")
+            domains = str(db.fetchall())
+            sameIPtuple = (i[0],domains)
+            db.execute("INSERT INTO sameIP (ip, domainArray) VALUES (?,?)",sameIPtuple)
+            con.commit()
 def main():
     con = database()
     db = con.cursor()
     getIp(db,con)
     getPTR(db,con)
     isUp(con,db)
-    dashboard()
+    sameIP(con,db)
+    result(db,con)
 
 if __name__ == "__main__":
     main()
