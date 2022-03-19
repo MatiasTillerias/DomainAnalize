@@ -97,7 +97,7 @@ def isUp(con,db):
                 statusTuple = (domain,str(r.status_code))
                 db.execute("INSERT INTO webStatusCode (domain,status_code) VALUES (?,?)",statusTuple)
                 con.commit()
-                if str(r.status_code) == "200" and bool(re.search("wp-",r.text)):
+                if str(r.status_code) == "200" and bool(re.search("/wp-(?:content|includes)/",r.text)):
                     isWordpressTupla = (i[0],"Es Wordpress")
                     db.execute("INSERT INTO wordpressDomain (domain, isWordpress) VALUES (?,?)",isWordpressTupla)
                     con.commit()

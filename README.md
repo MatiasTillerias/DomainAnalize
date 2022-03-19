@@ -6,7 +6,7 @@ A simple (or useless) python script used to analize a bunch of domains or subdom
 1) The IP Address of a domain
 2) The PTR Record from a IP address
 3) Other domains with the same IP (using the same server)
-
+4) CMS Detector (Just Wordpress... for now)
 
 
 ## Installation
