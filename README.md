@@ -1,5 +1,5 @@
 
-# Domain Analizer
+# Domain Analyzer
 
 A simple (or useless) python script used to analize a bunch of domains or subdomains, you can get information like.
 
